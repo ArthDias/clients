@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
+export type ClientDocument = Client & Document;
+
 @Schema({ timestamps: true })
 export class Client {
   @Prop({ required: true })
