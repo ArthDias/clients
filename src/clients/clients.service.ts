@@ -14,18 +14,18 @@ export class ClientsService {
     private readonly clientModel: Model<ClientDocument>,
   ) {}
 
-  async createClient(createClientDto: CreateClientDto) {
-    return await this.clientModel.create(createClientDto);
+  async createClient(dto: CreateClientDto): Promise<ClientDocument> {
+    return this.clientModel.create(dto);
   }
 
   async findAll(query: GetClientsQueryDto) {
-    const { pageNumber, pageSize } = this.parsePagination(query);
+    const { pageNumber, pageSize } = this.getPagination(query);
     const filter = this.buildFilter(query);
 
     const [data, total] = await Promise.all([
       this.clientModel
         .find(filter)
-        .skip((pageNumber - 1) * pageSize)
+        .skip(this.calculateSkip(pageNumber, pageSize))
         .limit(pageSize)
         .exec(),
       this.clientModel.countDocuments(filter),
@@ -35,63 +35,62 @@ export class ClientsService {
       data,
       total,
       pageNumber,
-      lastPage: Math.max(1, Math.ceil(total / pageSize)),
+      lastPage: this.calculateLastPage(total, pageSize),
     };
   }
 
-  async findById(id: string) {
+  async findById(id: string): Promise<ClientDocument> {
     const client = await this.clientModel.findById(id).exec();
-
-    if (!client) {
-      throw new NotFoundException('Client not found');
-    }
-
-    return client;
+    return this.ensureFound(client);
   }
 
-  async remove(id: string) {
-    const deletedClient = await this.clientModel.findByIdAndDelete(id).exec();
-
-    if (!deletedClient) {
-      throw new NotFoundException('Client not found');
-    }
+  async remove(id: string): Promise<void> {
+    const deleted = await this.clientModel.findByIdAndDelete(id).exec();
+    this.ensureFound(deleted);
   }
 
-  async replace(id: string, dto: UpdateClientDto) {
-    const replaced = await this.clientModel
+  async replace(id: string, dto: UpdateClientDto): Promise<ClientDocument> {
+    return this.updateById(id, dto);
+  }
+
+  async patch(id: string, dto: PatchClientDto): Promise<ClientDocument> {
+    return this.updateById(id, dto);
+  }
+
+  private async updateById(
+    id: string,
+    dto: UpdateClientDto | PatchClientDto,
+  ): Promise<ClientDocument> {
+    const updated = await this.clientModel
       .findByIdAndUpdate(id, dto, {
         returnDocument: 'after',
         runValidators: true,
       })
       .exec();
 
-    if (!replaced) {
-      throw new NotFoundException('Client not found');
-    }
-
-    return replaced;
+    return this.ensureFound(updated);
   }
 
-  async patch(id: string, patchClientDto: PatchClientDto) {
-    const patchedClient = await this.clientModel
-      .findByIdAndUpdate(id, patchClientDto, {
-        returnDocument: 'after',
-        runValidators: true,
-      })
-      .exec();
-
-    if (!patchedClient) {
+  private ensureFound<T>(entity: T | null): T {
+    if (!entity) {
       throw new NotFoundException('Client not found');
     }
-
-    return patchedClient;
+    return entity;
   }
 
-  private parsePagination(query: GetClientsQueryDto) {
-    const pageNumber = query.pageNumber ?? 1;
-    const pageSize = query.pageSize ?? 10;
+  private getPagination(query: GetClientsQueryDto) {
+    return {
+      pageNumber: query.pageNumber ?? 1,
+      pageSize: query.pageSize ?? 10,
+    };
+  }
 
-    return { pageNumber, pageSize };
+  private calculateSkip(pageNumber: number, pageSize: number): number {
+    return (pageNumber - 1) * pageSize;
+  }
+
+  private calculateLastPage(total: number, pageSize: number): number {
+    return Math.max(1, Math.ceil(total / pageSize));
   }
 
   private buildFilter(query: GetClientsQueryDto): QueryFilter<ClientDocument> {

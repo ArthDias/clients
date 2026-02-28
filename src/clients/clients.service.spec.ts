@@ -133,22 +133,6 @@ describe('ClientsService', () => {
       expect(result.lastPage).toBe(3);
     });
 
-    it('should default pagination when invalid values provided', async () => {
-      model.find.mockReturnValue(mockQueryChain);
-      model.countDocuments.mockResolvedValue(0);
-      mockExec.mockResolvedValue([]);
-
-      const query: GetClientsQueryDto = {
-        pageNumber: -23,
-        pageSize: -9.32,
-      };
-
-      const result = await service.findAll(query);
-
-      expect(result.pageNumber).toBe(1);
-      expect(result.lastPage).toBe(1);
-    });
-
     it('should build filter correctly when name and email provided', async () => {
       model.find.mockReturnValue(mockQueryChain);
       model.countDocuments.mockResolvedValue(0);

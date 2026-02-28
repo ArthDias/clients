@@ -8,7 +8,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { IsCPF } from 'src/common/validators/is-cpf.validator';
+import { IsCPF } from '../../common/validators/is-cpf.validator';
 
 export class GetClientsQueryDto {
   @ApiPropertyOptional({
