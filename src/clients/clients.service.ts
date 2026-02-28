@@ -25,10 +25,36 @@ export class ClientsService {
   }
 
   async findAll(query: GetClientsQueryDto) {
-    const pageNumber = Number(query.pageNumber) || 1;
-    const pageSize = Number(query.pageSize) || 10;
+    const { pageNumber, pageSize } = this.parsePagination(query);
+    const filter = this.buildFilter(query);
 
+    const [data, total] = await Promise.all([
+      this.clientModel
+        .find(filter)
+        .skip((pageNumber - 1) * pageSize)
+        .limit(pageSize)
+        .exec(),
+      this.clientModel.countDocuments(filter),
+    ]);
+
+    return {
+      data,
+      total,
+      pageNumber,
+      lastPage: Math.max(1, Math.ceil(total / pageSize)),
+    };
+  }
+
+  private parsePagination(query: GetClientsQueryDto) {
+    const pageNumber = Math.max(1, Number(query.pageNumber) || 1);
+    const pageSize = Math.max(1, Number(query.pageSize) || 10);
+
+    return { pageNumber, pageSize };
+  }
+
+  private buildFilter(query: GetClientsQueryDto): QueryFilter<ClientDocument> {
     const filter: QueryFilter<ClientDocument> = {};
+
     if (query.name) {
       filter.name = { $regex: query.name, $options: 'i' };
     }
@@ -41,21 +67,6 @@ export class ClientsService {
       filter.document = query.document;
     }
 
-    const [data, total] = await Promise.all([
-      this.clientModel
-        .find(filter)
-        .skip((pageNumber - 1) * pageSize)
-        .limit(pageSize)
-        .exec(),
-
-      this.clientModel.countDocuments(filter),
-    ]);
-
-    return {
-      data,
-      total,
-      pageNumber,
-      lastPage: Math.ceil(total / pageSize),
-    };
+    return filter;
   }
 }
