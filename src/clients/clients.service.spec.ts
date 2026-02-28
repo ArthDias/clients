@@ -1,8 +1,9 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MongoServerError } from 'mongodb';
 
+import { Types } from 'mongoose';
 import { Client } from './client.schema';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
@@ -14,11 +15,14 @@ describe('ClientsService', () => {
     create: jest.Mock;
     find: jest.Mock;
     countDocuments: jest.Mock;
+    findById: jest.Mock;
   };
+
   const mockClientModel = {
     create: jest.fn(),
     find: jest.fn(),
     countDocuments: jest.fn(),
+    findById: jest.fn(),
   };
 
   const mockCreateClientDto: CreateClientDto = {
@@ -28,7 +32,7 @@ describe('ClientsService', () => {
   };
 
   const mockCreatedClient = {
-    _id: 'mock-id',
+    _id: new Types.ObjectId().toHexString(),
     ...mockCreateClientDto,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -198,6 +202,45 @@ describe('ClientsService', () => {
       });
 
       await expect(service.findAll({})).rejects.toThrow('Database failure');
+    });
+  });
+
+  describe('findById', () => {
+    it('should return client when valid id and client exists', async () => {
+      const validId = new Types.ObjectId().toHexString();
+      const execMock = jest.fn().mockResolvedValue(mockCreatedClient);
+
+      model.findById.mockReturnValue({
+        exec: execMock,
+      });
+
+      const result = await service.findById(validId);
+
+      expect(model.findById).toHaveBeenCalledWith(validId);
+      expect(execMock).toHaveBeenCalled();
+      expect(result).toEqual(mockCreatedClient);
+    });
+
+    it('should throw NotFoundException when client does not exist', async () => {
+      const validId = new Types.ObjectId().toHexString();
+
+      model.findById.mockReturnValue({
+        exec: jest.fn().mockResolvedValue(null),
+      });
+
+      await expect(service.findById(validId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should propagate unexpected database errors', async () => {
+      const validId = new Types.ObjectId().toHexString();
+
+      model.findById.mockReturnValue({
+        exec: jest.fn().mockRejectedValue(new Error('DB failure')),
+      });
+
+      await expect(service.findById(validId)).rejects.toThrow('DB failure');
     });
   });
 });

@@ -1,5 +1,5 @@
+import { HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpException, HttpStatus } from '@nestjs/common';
 import { ClientsController } from './clients.controller';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
@@ -11,7 +11,10 @@ describe('ClientsController', () => {
   let clientsService: {
     createClient: jest.Mock;
     findAll: jest.Mock;
+    findById: jest.Mock;
   };
+
+  const validObjectId = '507f191e810c19729de860ea';
 
   const mockCreateClientDto: CreateClientDto = {
     name: 'Arthur',
@@ -20,7 +23,7 @@ describe('ClientsController', () => {
   };
 
   const mockCreatedClient = {
-    _id: 'mock-id',
+    _id: validObjectId,
     ...mockCreateClientDto,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -45,6 +48,7 @@ describe('ClientsController', () => {
     clientsService = {
       createClient: jest.fn(),
       findAll: jest.fn(),
+      findById: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -158,6 +162,43 @@ describe('ClientsController', () => {
       await controller.findAll(mockQuery);
 
       expect(spy).toHaveBeenCalledWith(mockQuery);
+    });
+  });
+
+  describe('findById', () => {
+    it('should call service and return client when id is valid', async () => {
+      clientsService.findById.mockResolvedValue(mockCreatedClient);
+
+      const result = await controller.findById(validObjectId);
+
+      expect(clientsService.findById).toHaveBeenCalledTimes(1);
+      expect(clientsService.findById).toHaveBeenCalledWith(validObjectId);
+      expect(result).toEqual(mockCreatedClient);
+    });
+
+    it('should propagate exception thrown by service', async () => {
+      const error = new NotFoundException('Client not found');
+      clientsService.findById.mockRejectedValue(error);
+
+      await expect(controller.findById(validObjectId)).rejects.toThrow(error);
+
+      expect(clientsService.findById).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return undefined if service returns undefined', async () => {
+      clientsService.findById.mockResolvedValue(undefined);
+      const result = await controller.findById(validObjectId);
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should verify delegation using spyOn', async () => {
+      const spy = jest
+        .spyOn(clientsService, 'findById')
+        .mockResolvedValue(mockCreatedClient);
+      await controller.findById(validObjectId);
+
+      expect(spy).toHaveBeenCalledWith(validObjectId);
     });
   });
 });
