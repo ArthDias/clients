@@ -1,14 +1,16 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { ClientsController } from './clients.controller';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
+import { GetClientsQueryDto } from './dto/get-clients.dto';
 
 describe('ClientsController', () => {
   let controller: ClientsController;
 
   let clientsService: {
     createClient: jest.Mock;
+    findAll: jest.Mock;
   };
 
   const mockCreateClientDto: CreateClientDto = {
@@ -24,9 +26,25 @@ describe('ClientsController', () => {
     updatedAt: new Date(),
   };
 
+  const mockQuery: GetClientsQueryDto = {
+    pageNumber: '1',
+    pageSize: '10',
+    name: 'Arthur',
+    email: 'arthur@email.com',
+    document: '12345678900',
+  };
+
+  const mockPaginatedResponse = {
+    data: [mockCreatedClient],
+    total: 1,
+    pageNumber: 1,
+    pageSize: 10,
+  };
+
   beforeEach(async () => {
     clientsService = {
       createClient: jest.fn(),
+      findAll: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -81,6 +99,65 @@ describe('ClientsController', () => {
       clientsService.createClient.mockResolvedValue(undefined);
       const result = await controller.create(mockCreateClientDto);
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('findAll', () => {
+    it('should call service with query and return paginated result', async () => {
+      clientsService.findAll.mockResolvedValue(mockPaginatedResponse);
+
+      const result = await controller.findAll(mockQuery);
+
+      expect(clientsService.findAll).toHaveBeenCalledTimes(1);
+      expect(clientsService.findAll).toHaveBeenCalledWith(mockQuery);
+      expect(result).toEqual(mockPaginatedResponse);
+    });
+
+    it('should return empty list when service returns empty result', async () => {
+      const emptyResponse = {
+        data: [],
+        total: 0,
+        pageNumber: 1,
+        pageSize: 10,
+      };
+
+      clientsService.findAll.mockResolvedValue(emptyResponse);
+
+      const result = await controller.findAll(mockQuery);
+
+      expect(result).toEqual(emptyResponse);
+      expect(result.data).toHaveLength(0);
+    });
+
+    it('should propagate exception thrown by service', async () => {
+      const error = new HttpException(
+        'Internal error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+      clientsService.findAll.mockRejectedValue(error);
+
+      await expect(controller.findAll(mockQuery)).rejects.toThrow(error);
+
+      expect(clientsService.findAll).toHaveBeenCalledTimes(1);
+    });
+
+    it('should forward empty query object to service', async () => {
+      const emptyQuery = {} as GetClientsQueryDto;
+      clientsService.findAll.mockResolvedValue(mockPaginatedResponse);
+
+      await controller.findAll(emptyQuery);
+
+      expect(clientsService.findAll).toHaveBeenCalledWith(emptyQuery);
+    });
+
+    it('should use spyOn to verify delegation behavior', async () => {
+      const spy = jest
+        .spyOn(clientsService, 'findAll')
+        .mockResolvedValue(mockPaginatedResponse);
+
+      await controller.findAll(mockQuery);
+
+      expect(spy).toHaveBeenCalledWith(mockQuery);
     });
   });
 });
