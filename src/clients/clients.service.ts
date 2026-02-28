@@ -1,9 +1,10 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { MongoServerError } from 'mongodb';
+import { Model, QueryFilter } from 'mongoose';
 import { Client, ClientDocument } from './client.schema';
 import { CreateClientDto } from './dto/create-client.dto';
-import { MongoServerError } from 'mongodb';
+import { GetClientsQueryDto } from './dto/get-clients.dto';
 
 @Injectable()
 export class ClientsService {
@@ -21,5 +22,40 @@ export class ClientsService {
       }
       throw error;
     }
+  }
+
+  async findAll(query: GetClientsQueryDto) {
+    const pageNumber = Number(query.pageNumber) || 1;
+    const pageSize = Number(query.pageSize) || 10;
+
+    const filter: QueryFilter<ClientDocument> = {};
+    if (query.name) {
+      filter.name = { $regex: query.name, $options: 'i' };
+    }
+
+    if (query.email) {
+      filter.email = { $regex: query.email, $options: 'i' };
+    }
+
+    if (query.document) {
+      filter.document = query.document;
+    }
+
+    const [data, total] = await Promise.all([
+      this.clientModel
+        .find(filter)
+        .skip((pageNumber - 1) * pageSize)
+        .limit(pageSize)
+        .exec(),
+
+      this.clientModel.countDocuments(filter),
+    ]);
+
+    return {
+      data,
+      total,
+      pageNumber,
+      lastPage: Math.ceil(total / pageSize),
+    };
   }
 }
