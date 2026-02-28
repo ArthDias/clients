@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: clients-api
+    env_file:
+      - .env
+    ports:
+      - '${PORT}:3000'
+    depends_on:
+      - mongodb
+    restart: always
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    restart: always
+
+volumes:
+  mongo_data:
