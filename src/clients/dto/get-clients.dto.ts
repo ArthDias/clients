@@ -1,29 +1,62 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsNumberString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  MinLength,
+} from 'class-validator';
+import { IsCPF } from 'src/common/validators/is-cpf.validator';
 
 export class GetClientsQueryDto {
+  @ApiPropertyOptional({
+    description: 'The page number (starts at 1)',
+    example: 1,
+    default: 1,
+  })
   @IsOptional()
-  @IsNumberString()
-  @ApiProperty({ description: 'The page number', required: false, default: 1 })
-  pageNumber?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  pageNumber?: number;
 
+  @ApiPropertyOptional({
+    description: 'The page size (max 100)',
+    example: 10,
+    default: 10,
+  })
   @IsOptional()
-  @IsNumberString()
-  @ApiProperty({ description: 'The page size', required: false, default: 10 })
-  pageSize?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  pageSize?: number;
 
+  @ApiPropertyOptional({
+    description: 'Filter by client name (partial match)',
+    example: 'Arthur',
+  })
   @IsOptional()
   @IsString()
-  @ApiProperty({ description: 'The client name', required: false })
+  @MinLength(2)
   name?: string;
 
+  @ApiPropertyOptional({
+    description: 'Filter by client email (partial match)',
+    example: 'arthur@email.com',
+  })
   @IsOptional()
   @IsString()
-  @ApiProperty({ description: 'The client email', required: false })
+  @MinLength(2)
   email?: string;
 
+  @ApiPropertyOptional({
+    description: 'Filter by CPF (numbers only)',
+    example: '12345678901',
+  })
   @IsOptional()
-  @IsString()
-  @ApiProperty({ description: 'The client document', required: false })
+  @IsCPF()
   document?: string;
 }

@@ -88,8 +88,8 @@ export class ClientsService {
   }
 
   private parsePagination(query: GetClientsQueryDto) {
-    const pageNumber = Math.max(1, Number(query.pageNumber) || 1);
-    const pageSize = Math.max(1, Number(query.pageSize) || 10);
+    const pageNumber = query.pageNumber ?? 1;
+    const pageSize = query.pageSize ?? 10;
 
     return { pageNumber, pageSize };
   }

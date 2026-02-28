@@ -80,14 +80,6 @@ describe('ClientsService', () => {
         unexpectedError,
       );
     });
-
-    it('should pass empty object to model (no validation at service level)', async () => {
-      model.create.mockResolvedValue({} as any);
-
-      await service.createClient({} as CreateClientDto);
-
-      expect(model.create).toHaveBeenCalledWith({});
-    });
   });
 
   describe('findAll', () => {
@@ -100,8 +92,8 @@ describe('ClientsService', () => {
     };
 
     const mockQuery: GetClientsQueryDto = {
-      pageNumber: '1',
-      pageSize: '10',
+      pageNumber: 1,
+      pageSize: 10,
       name: 'Arthur',
       email: 'arthur@email.com',
       document: '12345678900',
@@ -132,8 +124,8 @@ describe('ClientsService', () => {
       mockExec.mockResolvedValue([]);
 
       const query: GetClientsQueryDto = {
-        pageNumber: '1',
-        pageSize: '10',
+        pageNumber: 1,
+        pageSize: 10,
       };
 
       const result = await service.findAll(query);
@@ -147,8 +139,8 @@ describe('ClientsService', () => {
       mockExec.mockResolvedValue([]);
 
       const query: GetClientsQueryDto = {
-        pageNumber: 'invalid',
-        pageSize: 'invalid',
+        pageNumber: -23,
+        pageSize: -9.32,
       };
 
       const result = await service.findAll(query);

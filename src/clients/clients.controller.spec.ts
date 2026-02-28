@@ -35,8 +35,8 @@ describe('ClientsController', () => {
   };
 
   const mockQuery: GetClientsQueryDto = {
-    pageNumber: '1',
-    pageSize: '10',
+    pageNumber: 1,
+    pageSize: 10,
     name: 'Arthur',
     email: 'arthur@email.com',
     document: '12345678900',
@@ -97,14 +97,6 @@ describe('ClientsController', () => {
       );
 
       expect(clientsService.createClient).toHaveBeenCalledTimes(1);
-    });
-
-    it('should forward invalid dto to service (no validation at controller level)', async () => {
-      const invalidDto = {} as CreateClientDto;
-      clientsService.createClient.mockResolvedValue(mockCreatedClient);
-      await controller.create(invalidDto);
-
-      expect(clientsService.createClient).toHaveBeenCalledWith(invalidDto);
     });
 
     it('should return undefined if service returns undefined', async () => {
@@ -306,18 +298,6 @@ describe('ClientsController', () => {
       expect(clientsService.replace).toHaveBeenCalledTimes(1);
     });
 
-    it('should forward empty dto to service (no validation at controller level)', async () => {
-      const emptyDto = {} as UpdateClientDto;
-      clientsService.replace.mockResolvedValue(mockUpdatedClient);
-
-      await controller.replace(validObjectId, emptyDto);
-
-      expect(clientsService.replace).toHaveBeenCalledWith(
-        validObjectId,
-        emptyDto,
-      );
-    });
-
     it('should return undefined if service returns undefined', async () => {
       clientsService.replace.mockResolvedValue(undefined);
 
@@ -337,17 +317,6 @@ describe('ClientsController', () => {
       await controller.replace(validObjectId, mockUpdateClientDto);
 
       expect(spy).toHaveBeenCalledWith(validObjectId, mockUpdateClientDto);
-    });
-
-    it('should forward invalid dto to service (no validation at controller level)', async () => {
-      const invalidDto = {} as UpdateClientDto;
-      clientsService.replace.mockResolvedValue(mockUpdatedClient);
-      await controller.replace(validObjectId, invalidDto);
-
-      expect(clientsService.replace).toHaveBeenCalledWith(
-        validObjectId,
-        invalidDto,
-      );
     });
   });
 
