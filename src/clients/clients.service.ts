@@ -9,6 +9,7 @@ import { Model, QueryFilter } from 'mongoose';
 import { Client, ClientDocument } from './client.schema';
 import { CreateClientDto } from './dto/create-client.dto';
 import { GetClientsQueryDto } from './dto/get-clients.dto';
+import { UpdateClientDto } from './dto/update-client.dto';
 
 @Injectable()
 export class ClientsService {
@@ -25,24 +26,6 @@ export class ClientsService {
         throw new ConflictException('Email or document already exists');
       }
       throw error;
-    }
-  }
-
-  async findById(id: string) {
-    const client = await this.clientModel.findById(id).exec();
-
-    if (!client) {
-      throw new NotFoundException('Client not found');
-    }
-
-    return client;
-  }
-
-  async remove(id: string) {
-    const deletedClient = await this.clientModel.findByIdAndDelete(id).exec();
-
-    if (!deletedClient) {
-      throw new NotFoundException('Client not found');
     }
   }
 
@@ -65,6 +48,39 @@ export class ClientsService {
       pageNumber,
       lastPage: Math.max(1, Math.ceil(total / pageSize)),
     };
+  }
+
+  async findById(id: string) {
+    const client = await this.clientModel.findById(id).exec();
+
+    if (!client) {
+      throw new NotFoundException('Client not found');
+    }
+
+    return client;
+  }
+
+  async remove(id: string) {
+    const deletedClient = await this.clientModel.findByIdAndDelete(id).exec();
+
+    if (!deletedClient) {
+      throw new NotFoundException('Client not found');
+    }
+  }
+
+  async replace(id: string, dto: UpdateClientDto) {
+    const replaced = await this.clientModel
+      .findByIdAndUpdate(id, dto, {
+        returnDocument: 'after',
+        runValidators: true,
+      })
+      .exec();
+
+    if (!replaced) {
+      throw new NotFoundException('Client not found');
+    }
+
+    return replaced;
   }
 
   private parsePagination(query: GetClientsQueryDto) {

@@ -6,6 +6,7 @@ import {
   HttpCode,
   Param,
   Post,
+  Put,
   Query,
 } from '@nestjs/common';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
@@ -13,6 +14,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { GetClientsQueryDto } from './dto/get-clients.dto';
+import { UpdateClientDto } from './dto/update-client.dto';
 
 @ApiTags('Clients')
 @Controller('clients')
@@ -46,5 +48,15 @@ export class ClientsController {
   @ApiResponse({ status: 204, description: 'Client deleted successfully.' })
   remove(@Param('id', ParseObjectIdPipe) id: string) {
     return this.clientsService.remove(id);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update client by id' })
+  @ApiResponse({ status: 200, description: 'Client updated successfully.' })
+  update(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() updateClientDto: UpdateClientDto,
+  ) {
+    return this.clientsService.replace(id, updateClientDto);
   }
 }
