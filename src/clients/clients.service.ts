@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, QueryFilter } from 'mongoose';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Client, ClientDocument } from './client.schema';
 import { CreateClientDto } from './dto/create-client.dto';
 import { GetClientsQueryDto } from './dto/get-clients.dto';
@@ -12,9 +13,12 @@ export class ClientsService {
   constructor(
     @InjectModel(Client.name)
     private readonly clientModel: Model<ClientDocument>,
+    @InjectPinoLogger(ClientsService.name)
+    private readonly logger: PinoLogger,
   ) {}
 
   async createClient(dto: CreateClientDto): Promise<ClientDocument> {
+    this.logger.info({ email: dto.email }, 'Creating client');
     return this.clientModel.create(dto);
   }
 
@@ -41,12 +45,13 @@ export class ClientsService {
 
   async findById(id: string): Promise<ClientDocument> {
     const client = await this.clientModel.findById(id).exec();
-    return this.ensureFound(client);
+    return this.ensureFound(client, id);
   }
 
   async remove(id: string): Promise<void> {
+    this.logger.info({ clientId: id }, 'Deleting client');
     const deleted = await this.clientModel.findByIdAndDelete(id).exec();
-    this.ensureFound(deleted);
+    this.ensureFound(deleted, id);
   }
 
   async replace(id: string, dto: UpdateClientDto): Promise<ClientDocument> {
@@ -61,6 +66,7 @@ export class ClientsService {
     id: string,
     dto: UpdateClientDto | PatchClientDto,
   ): Promise<ClientDocument> {
+    this.logger.info({ clientId: id }, 'Updating client');
     const updated = await this.clientModel
       .findByIdAndUpdate(id, dto, {
         returnDocument: 'after',
@@ -68,11 +74,12 @@ export class ClientsService {
       })
       .exec();
 
-    return this.ensureFound(updated);
+    return this.ensureFound(updated, id);
   }
 
-  private ensureFound<T>(entity: T | null): T {
+  private ensureFound<T>(entity: T | null, id: string): T {
     if (!entity) {
+      this.logger.warn({ clientId: id }, 'Client not found');
       throw new NotFoundException('Client not found');
     }
     return entity;

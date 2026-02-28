@@ -1,8 +1,11 @@
 import { ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { GlobalExceptionFilter } from './global-exception.filter';
+import { PinoLogger } from 'nestjs-pino';
 
 describe('GlobalExceptionFilter', () => {
   let filter: GlobalExceptionFilter;
+
+  let mockLogger: jest.Mocked<PinoLogger>;
 
   let mockResponse: {
     status: jest.Mock;
@@ -16,7 +19,17 @@ describe('GlobalExceptionFilter', () => {
   let mockArgumentsHost: ArgumentsHost;
 
   beforeEach(() => {
-    filter = new GlobalExceptionFilter();
+    mockLogger = {
+      error: jest.fn(),
+      warn: jest.fn(),
+      log: jest.fn(),
+      debug: jest.fn(),
+      trace: jest.fn(),
+      fatal: jest.fn(),
+      setContext: jest.fn(),
+      assign: jest.fn(),
+    } as unknown as jest.Mocked<PinoLogger>;
+    filter = new GlobalExceptionFilter(mockLogger);
 
     mockResponse = {
       status: jest.fn().mockReturnThis(),

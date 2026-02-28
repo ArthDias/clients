@@ -1,8 +1,14 @@
-import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  Injectable,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { MongoServerError } from 'mongodb';
 import { isDuplicateKeyError } from '../types/mongo.types';
 
+@Injectable()
 @Catch(MongoServerError)
 export class MongoExceptionFilter implements ExceptionFilter {
   catch(exception: MongoServerError, host: ArgumentsHost) {

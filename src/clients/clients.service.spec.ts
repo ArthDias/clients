@@ -8,6 +8,7 @@ import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { GetClientsQueryDto } from './dto/get-clients.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
+import { getLoggerToken } from 'nestjs-pino';
 
 describe('ClientsService', () => {
   let service: ClientsService;
@@ -18,6 +19,13 @@ describe('ClientsService', () => {
     findById: jest.Mock;
     findByIdAndDelete: jest.Mock;
     findByIdAndUpdate: jest.Mock;
+  };
+
+  const mockLogger = {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
   };
 
   const mockClientModel = {
@@ -49,6 +57,10 @@ describe('ClientsService', () => {
         {
           provide: getModelToken(Client.name),
           useValue: mockClientModel,
+        },
+        {
+          provide: getLoggerToken(ClientsService.name),
+          useValue: mockLogger,
         },
       ],
     }).compile();
