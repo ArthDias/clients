@@ -38,6 +38,14 @@ export class ClientsService {
     return client;
   }
 
+  async remove(id: string) {
+    const deletedClient = await this.clientModel.findByIdAndDelete(id).exec();
+
+    if (!deletedClient) {
+      throw new NotFoundException('Client not found');
+    }
+  }
+
   async findAll(query: GetClientsQueryDto) {
     const { pageNumber, pageSize } = this.parsePagination(query);
     const filter = this.buildFilter(query);

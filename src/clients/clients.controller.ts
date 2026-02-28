@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ClientsService } from './clients.service';
@@ -29,5 +38,13 @@ export class ClientsController {
   @ApiResponse({ status: 200, description: 'Client found.' })
   findById(@Param('id', ParseObjectIdPipe) id: string) {
     return this.clientsService.findById(id);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete client by id' })
+  @HttpCode(204)
+  @ApiResponse({ status: 204, description: 'Client deleted successfully.' })
+  remove(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.clientsService.remove(id);
   }
 }
