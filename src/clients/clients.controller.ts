@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { ParseObjectIdPipe } from '@nestjs/mongoose';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CreateClientDto } from './dto/create-client.dto';
 import { ClientsService } from './clients.service';
+import { CreateClientDto } from './dto/create-client.dto';
 import { GetClientsQueryDto } from './dto/get-clients.dto';
 
 @ApiTags('Clients')
@@ -21,5 +22,12 @@ export class ClientsController {
   @ApiResponse({ status: 200, description: 'Return a list of items.' })
   findAll(@Query() query: GetClientsQueryDto) {
     return this.clientsService.findAll(query);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get client by id' })
+  @ApiResponse({ status: 200, description: 'Client found.' })
+  findById(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.clientsService.findById(id);
   }
 }

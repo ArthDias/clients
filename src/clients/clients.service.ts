@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MongoServerError } from 'mongodb';
 import { Model, QueryFilter } from 'mongoose';
@@ -22,6 +26,16 @@ export class ClientsService {
       }
       throw error;
     }
+  }
+
+  async findById(id: string) {
+    const client = await this.clientModel.findById(id).exec();
+
+    if (!client) {
+      throw new NotFoundException('Client not found');
+    }
+
+    return client;
   }
 
   async findAll(query: GetClientsQueryDto) {
