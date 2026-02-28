@@ -1,98 +1,271 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Clients API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API RESTful para gerenciamento de clientes.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 📌 Objetivo
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Implementar uma API RESTful com:
 
-## Project setup
+* Node.js
+* MongoDB
+* Docker
+* Swagger/OpenAPI
+* Boas práticas de arquitetura
+* Versionamento estruturado
+* Testes unitários
 
-```bash
-$ npm install
+---
+
+# 🚀 Tecnologias Utilizadas
+
+* **Node.js 20**
+* **NestJS**
+* **MongoDB 7**
+* **Mongoose**
+* **Docker**
+* **Docker Compose**
+* **Jest**
+* **Swagger (OpenAPI)**
+* **nestjs-pino (logs estruturados)**
+
+---
+
+# 🏗 Arquitetura
+
+Optei por **não aplicar Clean Architecture completa** (com camadas de domínio, use cases, interfaces de repositório, etc.) para este projeto.
+
+ ### Motivo:
+
+O escopo do desafio é relativamente simples (CRUD com regras de validação). Aplicar Clean Architecture completa adicionaria:
+
+* Camadas extras
+* Interfaces adicionais
+* Complexidade estrutural desnecessária
+* Aumento de boilerplate
+
+Isso caracterizaria **overengineering** para o contexto do teste.
+
+Em vez disso, utilizei a arquitetura modular padrão do NestJS, que já oferece:
+
+* Separação clara de responsabilidades
+* Testabilidade
+* Escalabilidade
+* Organização adequada para aplicações de médio porte
+
+Caso o projeto evoluísse para um domínio mais complexo, com múltiplos agregados e regras de negócio sofisticadas, a adoção de Clean Architecture poderia ser considerada.
+
+```
+src/
+ ├── app-config/        # Configuração e variáveis de ambiente
+ ├── clients/           # Módulo principal de clientes
+ ├── common/
+ │     ├── filters/     # Filtros globais de exceção
+ │     ├── pipes/       # Pipes customizados
+ │     ├── validators/  # Validadores customizados
+ │     └── types/       # Tipagens auxiliares
+ └── main.ts
 ```
 
-## Compile and run the project
+### Separação de responsabilidades:
 
-```bash
-# development
-$ npm run start
+* **Controller** → Camada HTTP
+* **Service** → Regras de negócio
+* **Schema** → Modelagem MongoDB
+* **DTOs** → Validação e contrato da API
+* **Filters** → Tratamento centralizado de erros
+* **Pipes** → Validação de parâmetros
+* **Config Module** → Gerenciamento de variáveis de ambiente
 
-# watch mode
-$ npm run start:dev
+---
 
-# production mode
-$ npm run start:prod
+# 📦 Modelo de Cliente
+
+```json
+{
+  "id": "string",
+  "name": "string",
+  "email": "string",
+  "document": "string (CPF)",
+  "createdAt": "datetime",
+  "updatedAt": "datetime"
+}
 ```
 
-## Run tests
+* `email` é único
+* `document (CPF)` é único
+* `createdAt` e `updatedAt` são gerados automaticamente
 
-```bash
-# unit tests
-$ npm run test
+---
 
-# e2e tests
-$ npm run test:e2e
+# 🔌 Rotas Disponíveis
 
-# test coverage
-$ npm run test:cov
+| Método | Rota         | Descrição                     |
+| ------ | ------------ | ----------------------------- |
+| POST   | /clients     | Criar cliente                 |
+| GET    | /clients     | Listar clientes com paginação |
+| GET    | /clients/:id | Buscar por ID                 |
+| PUT    | /clients/:id | Substituição completa         |
+| PATCH  | /clients/:id | Atualização parcial           |
+| DELETE | /clients/:id | Remover cliente               |
+
+---
+
+# 📘 Documentação Swagger
+
+Após iniciar a aplicação:
+
+```
+http://localhost:3000/swagger
 ```
 
-## Deployment
+A documentação permite testar todas as rotas diretamente pela interface.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+---
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+# ⚙️ Configuração de Variáveis de Ambiente
+
+Antes de rodar o projeto, é necessário criar o arquivo `.env`.
+
+Existe um arquivo de exemplo chamado `.env.example` na raiz do projeto.
+
+## 📌 Passo obrigatório
+
+Copie o arquivo de exemplo:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+cp .env.example .env
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Depois, ajuste as variáveis se necessário.
 
-## Resources
+As variáveis de ambiente são validadas na inicialização da aplicação utilizando **Joi**.
+Caso alguma variável obrigatória não esteja definida, a aplicação não será iniciada.
 
-Check out a few resources that may come in handy when working with NestJS:
+---
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# 🐳 Executando com Docker (Recomendado)
 
-## Support
+### 1️⃣ Build e start
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+docker-compose up --build
+```
 
-## Stay in touch
+A aplicação estará disponível em:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```
+http://localhost:3000
+```
 
-## License
+Swagger:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```
+http://localhost:3000/swagger
+```
+
+---
+
+# 💻 Executando Localmente (Sem Docker)
+
+### 1️⃣ Instalar dependências
+
+```bash
+npm install
+```
+
+### 2️⃣ Rodar MongoDB localmente
+
+Você pode:
+* Rodar uma instância local
+* Ou subir apenas o container do MongoDB via Docker
+
+### 3️⃣ Rodar aplicação
+
+```bash
+npm run start:dev
+```
+
+---
+
+# 🧪 Testes Unitários
+
+Foram implementados testes unitários para:
+
+* ClientsService
+* ClientsController
+* AppConfigService
+* GlobalExceptionFilter
+* MongoExceptionFilter
+* ParseObjectIdPipe
+* CPF Validator
+
+### Executar testes:
+
+```bash
+npm run test
+```
+
+---
+
+# 🛡 Validações Implementadas
+
+* Validação de DTO com `class-validator`
+* `whitelist` e `forbidNonWhitelisted`
+* CPF validator customizado
+* Email válido
+* Paginação validada
+* Validação de ObjectId
+* Tratamento de erro para chave duplicada (Mongo error 11000)
+
+---
+
+# 📊 Logs
+
+A aplicação utiliza **nestjs-pino** para logs estruturados:
+
+* Logs HTTP automáticos
+* Logs de service
+* Logs de erro estruturados
+* Pretty print em ambiente de desenvolvimento
+
+---
+
+# 🧠 Decisões Técnicas
+
+* **NestJS** foi escolhido por sua arquitetura modular e suporte nativo a boas práticas.
+* **Mongoose** foi utilizado para modelagem e validação no nível do banco.
+* **DTOs + ValidationPipe global** garantem contrato forte da API.
+* **Exception Filters globais** centralizam tratamento de erros.
+* **Logger estruturado** melhora observabilidade.
+* **Docker Compose** garante ambiente reprodutível.
+* **Paginação server-side** melhora escalabilidade.
+* **Separação clara de camadas** facilita manutenção e testes.
+
+---
+
+# 🤖 Uso de Inteligência Artificial
+
+Ferramentas de IA foram utilizadas como apoio para:
+
+* Revisão de código
+* Sugestões de melhorias arquiteturais
+* Validação de boas práticas
+
+Todas as decisões técnicas, implementação, estrutura e validações foram compreendidas e aplicadas conscientemente.
+
+O código foi revisado manualmente e pode ser explicado detalhadamente em entrevista técnica.
+
+---
+
+# 📈 Diferenciais Implementados
+
+✔ Logs estruturados
+✔ Filtros globais de exceção
+✔ Validação robusta
+✔ Paginação com cálculo de última página
+✔ Tratamento específico de erro de duplicidade do MongoDB
+✔ Testes unitários
+✔ Configuração validada com Joi
+✔ Docker completo com persistência de dados
