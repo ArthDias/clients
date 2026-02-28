@@ -16,6 +16,7 @@ describe('ClientsService', () => {
     find: jest.Mock;
     countDocuments: jest.Mock;
     findById: jest.Mock;
+    findByIdAndDelete: jest.Mock;
   };
 
   const mockClientModel = {
@@ -23,6 +24,7 @@ describe('ClientsService', () => {
     find: jest.fn(),
     countDocuments: jest.fn(),
     findById: jest.fn(),
+    findByIdAndDelete: jest.fn(),
   };
 
   const mockCreateClientDto: CreateClientDto = {
@@ -241,6 +243,42 @@ describe('ClientsService', () => {
       });
 
       await expect(service.findById(validId)).rejects.toThrow('DB failure');
+    });
+  });
+
+  describe('remove', () => {
+    it('should throw NotFoundException when client does not exist', async () => {
+      const validId = new Types.ObjectId().toHexString();
+
+      model.findByIdAndDelete.mockReturnValue({
+        exec: jest.fn().mockResolvedValue(null),
+      });
+
+      await expect(service.remove(validId)).rejects.toThrow(NotFoundException);
+
+      expect(model.findByIdAndDelete).toHaveBeenCalledWith(validId);
+    });
+
+    it('should propagate unexpected database errors', async () => {
+      const validId = new Types.ObjectId().toHexString();
+
+      model.findByIdAndDelete.mockReturnValue({
+        exec: jest.fn().mockRejectedValue(new Error('Database failure')),
+      });
+
+      await expect(service.remove(validId)).rejects.toThrow('Database failure');
+    });
+
+    it('should verify delegation using spyOn', async () => {
+      const validId = new Types.ObjectId().toHexString();
+
+      const spy = jest.spyOn(model, 'findByIdAndDelete').mockReturnValue({
+        exec: jest.fn().mockResolvedValue(mockCreatedClient),
+      } as any);
+
+      await service.remove(validId);
+
+      expect(spy).toHaveBeenCalledWith(validId);
     });
   });
 });

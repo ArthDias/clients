@@ -12,6 +12,7 @@ describe('ClientsController', () => {
     createClient: jest.Mock;
     findAll: jest.Mock;
     findById: jest.Mock;
+    remove: jest.Mock;
   };
 
   const validObjectId = '507f191e810c19729de860ea';
@@ -49,6 +50,7 @@ describe('ClientsController', () => {
       createClient: jest.fn(),
       findAll: jest.fn(),
       findById: jest.fn(),
+      remove: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -197,6 +199,47 @@ describe('ClientsController', () => {
         .spyOn(clientsService, 'findById')
         .mockResolvedValue(mockCreatedClient);
       await controller.findById(validObjectId);
+
+      expect(spy).toHaveBeenCalledWith(validObjectId);
+    });
+  });
+
+  describe('remove', () => {
+    it('should call service.remove and return its result (successful deletion)', async () => {
+      clientsService.remove.mockResolvedValue(undefined);
+
+      const result = await controller.remove(validObjectId);
+
+      expect(clientsService.remove).toHaveBeenCalledTimes(1);
+      expect(clientsService.remove).toHaveBeenCalledWith(validObjectId);
+      expect(result).toBeUndefined();
+    });
+
+    it('should propagate NotFoundException thrown by service', async () => {
+      const error = new NotFoundException('Client not found');
+      clientsService.remove.mockRejectedValue(error);
+
+      await expect(controller.remove(validObjectId)).rejects.toThrow(error);
+
+      expect(clientsService.remove).toHaveBeenCalledTimes(1);
+    });
+
+    it('should propagate generic HttpException thrown by service', async () => {
+      const error = new HttpException(
+        'Internal error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+      clientsService.remove.mockRejectedValue(error);
+
+      await expect(controller.remove(validObjectId)).rejects.toThrow(error);
+    });
+
+    it('should verify delegation behavior using spyOn', async () => {
+      const spy = jest
+        .spyOn(clientsService, 'remove')
+        .mockResolvedValue(undefined);
+
+      await controller.remove(validObjectId);
 
       expect(spy).toHaveBeenCalledWith(validObjectId);
     });
