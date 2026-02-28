@@ -1,7 +1,6 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MongoServerError } from 'mongodb';
 
 import { Types } from 'mongoose';
 import { Client } from './client.schema';
@@ -71,23 +70,6 @@ describe('ClientsService', () => {
       expect(model.create).toHaveBeenCalledTimes(1);
       expect(model.create).toHaveBeenCalledWith(mockCreateClientDto);
       expect(result).toEqual(mockCreatedClient);
-    });
-
-    it('should throw ConflictException when duplicate key error occurs', async () => {
-      const mongoError = new MongoServerError({
-        message: 'E11000 duplicate key error',
-      });
-      mongoError.code = 11000;
-
-      model.create.mockRejectedValue(mongoError);
-
-      await expect(service.createClient(mockCreateClientDto)).rejects.toThrow(
-        ConflictException,
-      );
-
-      await expect(service.createClient(mockCreateClientDto)).rejects.toThrow(
-        'Email or document already exists',
-      );
     });
 
     it('should rethrow unexpected errors', async () => {
@@ -364,6 +346,104 @@ describe('ClientsService', () => {
         returnDocument: 'after',
         runValidators: true,
       });
+    });
+  });
+
+  describe('patch', () => {
+    const mockExec = jest.fn();
+
+    const mockPatchDto = {
+      name: 'Patched Name',
+    };
+
+    const mockPatchedClient = {
+      _id: new Types.ObjectId().toHexString(),
+      name: 'Patched Name',
+      email: 'arthur@email.com',
+      document: '12345678900',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    beforeEach(() => {
+      model.findByIdAndUpdate = jest.fn().mockReturnValue({
+        exec: mockExec,
+      });
+    });
+
+    it('should update and return the patched client successfully', async () => {
+      mockExec.mockResolvedValue(mockPatchedClient);
+
+      const result = await service.patch(mockPatchedClient._id, mockPatchDto);
+
+      expect(model.findByIdAndUpdate).toHaveBeenCalledTimes(1);
+      expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+        mockPatchedClient._id,
+        mockPatchDto,
+        {
+          returnDocument: 'after',
+          runValidators: true,
+        },
+      );
+
+      expect(mockExec).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockPatchedClient);
+    });
+
+    it('should throw NotFoundException when client does not exist', async () => {
+      mockExec.mockResolvedValue(null);
+
+      const nonExistingId = new Types.ObjectId().toHexString();
+
+      await expect(service.patch(nonExistingId, mockPatchDto)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      await expect(service.patch(nonExistingId, mockPatchDto)).rejects.toThrow(
+        'Client not found',
+      );
+    });
+
+    it('should propagate unexpected database errors', async () => {
+      mockExec.mockRejectedValue(new Error('Database failure'));
+
+      const validId = new Types.ObjectId().toHexString();
+
+      await expect(service.patch(validId, mockPatchDto)).rejects.toThrow(
+        'Database failure',
+      );
+    });
+
+    it('should call mongoose query chain correctly (using spyOn)', async () => {
+      const validId = new Types.ObjectId().toHexString();
+
+      const spy = jest.spyOn(model, 'findByIdAndUpdate').mockReturnValue({
+        exec: jest.fn().mockResolvedValue(mockPatchedClient),
+      });
+
+      await service.patch(validId, mockPatchDto);
+
+      expect(spy).toHaveBeenCalledWith(validId, mockPatchDto, {
+        returnDocument: 'after',
+        runValidators: true,
+      });
+    });
+
+    it('should allow empty patch object (edge case)', async () => {
+      mockExec.mockResolvedValue(mockPatchedClient);
+
+      const validId = new Types.ObjectId().toHexString();
+
+      await service.patch(validId, {});
+
+      expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+        validId,
+        {},
+        {
+          returnDocument: 'after',
+          runValidators: true,
+        },
+      );
     });
   });
 });

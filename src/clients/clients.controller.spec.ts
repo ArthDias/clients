@@ -4,6 +4,7 @@ import { ClientsController } from './clients.controller';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { GetClientsQueryDto } from './dto/get-clients.dto';
+import { PatchClientDto } from './dto/patch-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 
 describe('ClientsController', () => {
@@ -15,6 +16,7 @@ describe('ClientsController', () => {
     findById: jest.Mock;
     remove: jest.Mock;
     replace: jest.Mock;
+    patch: jest.Mock;
   };
 
   const validObjectId = '507f191e810c19729de860ea';
@@ -54,6 +56,7 @@ describe('ClientsController', () => {
       findById: jest.fn(),
       remove: jest.fn(),
       replace: jest.fn(),
+      patch: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -265,7 +268,7 @@ describe('ClientsController', () => {
     it('should call service.replace and return updated client (success flow)', async () => {
       clientsService.replace.mockResolvedValue(mockUpdatedClient);
 
-      const result = await controller.update(
+      const result = await controller.replace(
         validObjectId,
         mockUpdateClientDto,
       );
@@ -283,7 +286,7 @@ describe('ClientsController', () => {
       clientsService.replace.mockRejectedValue(error);
 
       await expect(
-        controller.update(validObjectId, mockUpdateClientDto),
+        controller.replace(validObjectId, mockUpdateClientDto),
       ).rejects.toThrow(error);
 
       expect(clientsService.replace).toHaveBeenCalledTimes(1);
@@ -297,7 +300,7 @@ describe('ClientsController', () => {
       clientsService.replace.mockRejectedValue(error);
 
       await expect(
-        controller.update(validObjectId, mockUpdateClientDto),
+        controller.replace(validObjectId, mockUpdateClientDto),
       ).rejects.toThrow(error);
 
       expect(clientsService.replace).toHaveBeenCalledTimes(1);
@@ -307,7 +310,7 @@ describe('ClientsController', () => {
       const emptyDto = {} as UpdateClientDto;
       clientsService.replace.mockResolvedValue(mockUpdatedClient);
 
-      await controller.update(validObjectId, emptyDto);
+      await controller.replace(validObjectId, emptyDto);
 
       expect(clientsService.replace).toHaveBeenCalledWith(
         validObjectId,
@@ -318,7 +321,7 @@ describe('ClientsController', () => {
     it('should return undefined if service returns undefined', async () => {
       clientsService.replace.mockResolvedValue(undefined);
 
-      const result = await controller.update(
+      const result = await controller.replace(
         validObjectId,
         mockUpdateClientDto,
       );
@@ -331,9 +334,104 @@ describe('ClientsController', () => {
         .spyOn(clientsService, 'replace')
         .mockResolvedValue(mockUpdatedClient);
 
-      await controller.update(validObjectId, mockUpdateClientDto);
+      await controller.replace(validObjectId, mockUpdateClientDto);
 
       expect(spy).toHaveBeenCalledWith(validObjectId, mockUpdateClientDto);
+    });
+
+    it('should forward invalid dto to service (no validation at controller level)', async () => {
+      const invalidDto = {} as UpdateClientDto;
+      clientsService.replace.mockResolvedValue(mockUpdatedClient);
+      await controller.replace(validObjectId, invalidDto);
+
+      expect(clientsService.replace).toHaveBeenCalledWith(
+        validObjectId,
+        invalidDto,
+      );
+    });
+  });
+
+  describe('patch', () => {
+    const mockPatchClientDto: PatchClientDto = {
+      name: 'Patched Name',
+    };
+
+    const mockPatchedClient = {
+      _id: validObjectId,
+      name: 'Patched Name',
+      email: 'arthur@email.com',
+      document: '12345678900',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should call service.patch and return updated client (success flow)', async () => {
+      clientsService.patch.mockResolvedValue(mockPatchedClient);
+
+      const result = await controller.patch(validObjectId, mockPatchClientDto);
+
+      expect(clientsService.patch).toHaveBeenCalledTimes(1);
+      expect(clientsService.patch).toHaveBeenCalledWith(
+        validObjectId,
+        mockPatchClientDto,
+      );
+      expect(result).toEqual(mockPatchedClient);
+    });
+
+    it('should propagate NotFoundException thrown by service', async () => {
+      const error = new NotFoundException('Client not found');
+      clientsService.patch.mockRejectedValue(error);
+
+      await expect(
+        controller.patch(validObjectId, mockPatchClientDto),
+      ).rejects.toThrow(error);
+
+      expect(clientsService.patch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should propagate generic HttpException thrown by service', async () => {
+      const error = new HttpException(
+        'Internal error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+
+      clientsService.patch.mockRejectedValue(error);
+
+      await expect(
+        controller.patch(validObjectId, mockPatchClientDto),
+      ).rejects.toThrow(error);
+
+      expect(clientsService.patch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should forward empty dto to service (edge case)', async () => {
+      const emptyDto: PatchClientDto = {};
+      clientsService.patch.mockResolvedValue(mockPatchedClient);
+
+      await controller.patch(validObjectId, emptyDto);
+
+      expect(clientsService.patch).toHaveBeenCalledWith(
+        validObjectId,
+        emptyDto,
+      );
+    });
+
+    it('should return undefined if service returns undefined', async () => {
+      clientsService.patch.mockResolvedValue(undefined);
+
+      const result = await controller.patch(validObjectId, mockPatchClientDto);
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should verify delegation behavior using spyOn', async () => {
+      const spy = jest
+        .spyOn(clientsService, 'patch')
+        .mockResolvedValue(mockPatchedClient);
+
+      await controller.patch(validObjectId, mockPatchClientDto);
+
+      expect(spy).toHaveBeenCalledWith(validObjectId, mockPatchClientDto);
     });
   });
 });
