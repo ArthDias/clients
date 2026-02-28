@@ -1,14 +1,10 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { MongoServerError } from 'mongodb';
 import { Model, QueryFilter } from 'mongoose';
 import { Client, ClientDocument } from './client.schema';
 import { CreateClientDto } from './dto/create-client.dto';
 import { GetClientsQueryDto } from './dto/get-clients.dto';
+import { PatchClientDto } from './dto/patch-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 
 @Injectable()
@@ -19,14 +15,7 @@ export class ClientsService {
   ) {}
 
   async createClient(createClientDto: CreateClientDto) {
-    try {
-      return await this.clientModel.create(createClientDto);
-    } catch (error: unknown) {
-      if (error instanceof MongoServerError && error.code === 11000) {
-        throw new ConflictException('Email or document already exists');
-      }
-      throw error;
-    }
+    return await this.clientModel.create(createClientDto);
   }
 
   async findAll(query: GetClientsQueryDto) {
@@ -81,6 +70,21 @@ export class ClientsService {
     }
 
     return replaced;
+  }
+
+  async patch(id: string, patchClientDto: PatchClientDto) {
+    const patchedClient = await this.clientModel
+      .findByIdAndUpdate(id, patchClientDto, {
+        returnDocument: 'after',
+        runValidators: true,
+      })
+      .exec();
+
+    if (!patchedClient) {
+      throw new NotFoundException('Client not found');
+    }
+
+    return patchedClient;
   }
 
   private parsePagination(query: GetClientsQueryDto) {

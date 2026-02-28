@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { AppConfigService } from './app-config/app-config.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { MongoExceptionFilter } from './common/filters/mongo-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,6 +15,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  app.useGlobalFilters(new MongoExceptionFilter());
+
   const config = app.get(AppConfigService);
 
   const swaggerConfig = new DocumentBuilder()

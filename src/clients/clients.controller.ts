@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -15,6 +16,7 @@ import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { GetClientsQueryDto } from './dto/get-clients.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
+import { PatchClientDto } from './dto/patch-client.dto';
 
 @ApiTags('Clients')
 @Controller('clients')
@@ -53,10 +55,20 @@ export class ClientsController {
   @Put(':id')
   @ApiOperation({ summary: 'Update client by id' })
   @ApiResponse({ status: 200, description: 'Client updated successfully.' })
-  update(
+  replace(
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() updateClientDto: UpdateClientDto,
   ) {
     return this.clientsService.replace(id, updateClientDto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update client by id' })
+  @ApiResponse({ status: 200, description: 'Client updated successfully.' })
+  patch(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() patchClientDto: PatchClientDto,
+  ) {
+    return this.clientsService.patch(id, patchClientDto);
   }
 }
