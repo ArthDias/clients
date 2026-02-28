@@ -6,14 +6,19 @@ import { MongoServerError } from 'mongodb';
 import { Client } from './client.schema';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
+import { GetClientsQueryDto } from './dto/get-clients.dto';
 
 describe('ClientsService', () => {
   let service: ClientsService;
   let model: {
     create: jest.Mock;
+    find: jest.Mock;
+    countDocuments: jest.Mock;
   };
   const mockClientModel = {
     create: jest.fn(),
+    find: jest.fn(),
+    countDocuments: jest.fn(),
   };
 
   const mockCreateClientDto: CreateClientDto = {
@@ -86,12 +91,113 @@ describe('ClientsService', () => {
     });
 
     it('should pass empty object to model (no validation at service level)', async () => {
-      // Arrange
       model.create.mockResolvedValue({} as any);
 
       await service.createClient({} as CreateClientDto);
 
       expect(model.create).toHaveBeenCalledWith({});
+    });
+  });
+
+  describe('findAll', () => {
+    const mockExec = jest.fn();
+
+    const mockQueryChain = {
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      exec: mockExec,
+    };
+
+    const mockQuery: GetClientsQueryDto = {
+      pageNumber: '1',
+      pageSize: '10',
+      name: 'Arthur',
+      email: 'arthur@email.com',
+      document: '12345678900',
+    };
+
+    it('should return paginated result successfully', async () => {
+      const mockData = [mockCreatedClient];
+      model.find.mockReturnValue(mockQueryChain);
+      model.countDocuments.mockResolvedValue(1);
+      mockExec.mockResolvedValue(mockData);
+
+      const result = await service.findAll(mockQuery);
+
+      expect(model.find).toHaveBeenCalledTimes(1);
+      expect(model.countDocuments).toHaveBeenCalledTimes(1);
+
+      expect(result).toEqual({
+        data: mockData,
+        total: 1,
+        pageNumber: 1,
+        lastPage: 1,
+      });
+    });
+
+    it('should calculate lastPage correctly when total > pageSize', async () => {
+      model.find.mockReturnValue(mockQueryChain);
+      model.countDocuments.mockResolvedValue(25);
+      mockExec.mockResolvedValue([]);
+
+      const query: GetClientsQueryDto = {
+        pageNumber: '1',
+        pageSize: '10',
+      };
+
+      const result = await service.findAll(query);
+
+      expect(result.lastPage).toBe(3);
+    });
+
+    it('should default pagination when invalid values provided', async () => {
+      model.find.mockReturnValue(mockQueryChain);
+      model.countDocuments.mockResolvedValue(0);
+      mockExec.mockResolvedValue([]);
+
+      const query: GetClientsQueryDto = {
+        pageNumber: 'invalid',
+        pageSize: 'invalid',
+      };
+
+      const result = await service.findAll(query);
+
+      expect(result.pageNumber).toBe(1);
+      expect(result.lastPage).toBe(1);
+    });
+
+    it('should build filter correctly when name and email provided', async () => {
+      model.find.mockReturnValue(mockQueryChain);
+      model.countDocuments.mockResolvedValue(0);
+      mockExec.mockResolvedValue([]);
+
+      const spy = jest.spyOn(model, 'find');
+
+      await service.findAll(mockQuery);
+
+      expect(spy).toHaveBeenCalledWith({
+        name: { $regex: 'Arthur', $options: 'i' },
+        email: { $regex: 'arthur@email.com', $options: 'i' },
+        document: '12345678900',
+      });
+    });
+
+    it('should return lastPage as 1 when total is 0', async () => {
+      model.find.mockReturnValue(mockQueryChain);
+      model.countDocuments.mockResolvedValue(0);
+      mockExec.mockResolvedValue([]);
+
+      const result = await service.findAll({});
+
+      expect(result.lastPage).toBe(1);
+    });
+
+    it('should propagate errors from database', async () => {
+      model.find.mockImplementation(() => {
+        throw new Error('Database failure');
+      });
+
+      await expect(service.findAll({})).rejects.toThrow('Database failure');
     });
   });
 });
