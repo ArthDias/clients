@@ -1,7 +1,8 @@
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppConfigService } from './app-config/app-config.service';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { AppConfigService } from './app-config/app-config.service';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,6 +15,15 @@ async function bootstrap() {
     }),
   );
   const config = app.get(AppConfigService);
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Clients API')
+    .setDescription('API para gerenciamento de clientes')
+    .setVersion('1.0')
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+
+  SwaggerModule.setup('swagger', app, document);
 
   await app.listen(config.port);
 }
